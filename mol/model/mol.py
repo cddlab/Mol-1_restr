@@ -655,6 +655,19 @@ class Mol(nn.Module):
         cache["projected_pair_biases"] = self._prepare_projected_pair_biases(
             cache["pair_z"]
         )
+        combined_restraints = None
+        restraints_config = input_feature_dict.get("restraints_config")
+        if restraints_config is not None:
+            from rgi_toolkit.combined import CombinedRestraints
+            from rgi_toolkit.mol1.adapter import Mol1Adapter
+
+            combined_restraints = CombinedRestraints()
+            combined_restraints.setup(
+                Mol1Adapter(input_feature_dict), nbatch=N_sample, config=restraints_config
+            )
+            if not combined_restraints.is_active():
+                combined_restraints = None
+
         pred_dict["coordinate"] = self.sample_diffusion(
             denoise_net=self.diffusion_module,
             input_feature_dict=input_feature_dict,
@@ -669,7 +682,12 @@ class Mol(nn.Module):
             inplace_safe=inplace_safe,
             enable_efficient_fusion=self.enable_efficient_fusion,
             projected_pair_biases=cache["projected_pair_biases"],
+            combined_restraints=combined_restraints,
         )
+        if combined_restraints is not None:
+            coords = pred_dict["coordinate"]
+            combined_restraints.finalize(coords.reshape(-1, coords.shape[-2], 3), N_step)
+
         # These tensors are useful only inside the denoising loop. Drop the
         # request-owned reference before confidence/distogram heads.
         del cache["projected_pair_biases"]

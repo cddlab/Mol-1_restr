@@ -145,6 +145,7 @@ def sample_diffusion(
     attn_chunk_size: Optional[int] = None,
     enable_efficient_fusion: bool = False,
     projected_pair_biases: Optional[ProjectedPairBiases] = None,
+    combined_restraints: Optional[Any] = None,
 ) -> torch.Tensor:
     """Implements Algorithm 18 in AF3.
     It performances denoising steps from time 0 to time T.
@@ -242,6 +243,19 @@ def sample_diffusion(
                 inplace_safe=inplace_safe,
                 enable_efficient_fusion=enable_efficient_fusion,
             )
+
+            if combined_restraints is not None:
+                from mol.metrics.rmsd import weighted_rigid_align
+
+                shape = x_denoised.shape
+                x_denoised = combined_restraints.minimize(
+                    x_denoised.reshape(-1, N_atom, 3), step_i, float(c_tau_last)
+                ).reshape(shape)
+                # Keep the noisy anchor in the corrected prediction's rigid frame.
+                weights = torch.ones(N_atom, device=device, dtype=torch.float32)
+                x_noisy = weighted_rigid_align(
+                    x_noisy.float(), x_denoised.float(), weights
+                ).to(x_noisy.dtype)
 
             delta = (x_noisy - x_denoised) / t_hat[
                 ..., None, None

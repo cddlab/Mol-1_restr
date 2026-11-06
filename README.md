@@ -1,3 +1,8 @@
+see [RGI-toolkit](https://github.com/cddlab/rgi_toolkit) for more information.
+
+<details>
+<summary>Original README</summary>
+
 # Mol-1
 
 <img src="assets/images/ribbon-mint-portrait.png" style="width: 100%; height: auto;" alt="Mol-1 overview">
@@ -268,3 +273,5 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) and
 ## License
 
 Apache License 2.0. See [LICENSE](LICENSE).
+
+</details>

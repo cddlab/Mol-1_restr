@@ -34,11 +34,12 @@ classifiers = [
 # The torch bound here is only a floor; the `cuda` extras narrow it to the
 # range whose default PyPI wheel matches their operator wheels.
 dependencies = [
+  "rgi-toolkit @ git+https://github.com/cddlab/rgi_toolkit.git@add_mol1_intellifold",
   "torch>=2.7",
   "click>=8.1.0",
   "numpy>=2.0",
   "scipy>=1.9.0",
-  "pandas>=2.0",
+  "pandas>=2.0,<3",
   "networkx>=3.4.2",
   "ml_collections==1.1.0",
   "PyYAML>=6.0",
@@ -74,6 +75,7 @@ dependencies = [
 # operator wheels returns more gradients than torch accepts, so fine-tuning
 # fails (inference is unaffected).
 cuda = [
+  "ninja>=1.11",
   "torch>=2.11,<2.14",
   "cuequivariance==0.10.0; platform_system == 'Linux' and platform_machine == 'x86_64'",
   "cuequivariance-torch==0.10.0; platform_system == 'Linux' and platform_machine == 'x86_64'",
@@ -83,6 +85,7 @@ cuda = [
 
 # For a driver too old for CUDA 13.
 cuda12 = [
+  "ninja>=1.11",
   "torch>=2.7,<2.11",
   "cuequivariance==0.10.0; platform_system == 'Linux' and platform_machine == 'x86_64'",
   "cuequivariance-torch==0.10.0; platform_system == 'Linux' and platform_machine == 'x86_64'",

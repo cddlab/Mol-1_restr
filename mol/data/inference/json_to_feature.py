@@ -129,9 +129,16 @@ class SampleDictToFeatures:
 
         atom_array = None
         asym_chain_idx = 0
+        self.smiles_by_chain: dict[str, str] = {}
         for idx, type2entity_dict in enumerate(self.input_dict["sequences"]):
             for entity_type, entity in type2entity_dict.items():
                 entity_id = str(idx + 1)
+                ligand = entity.get("ligand")
+                is_smiles = (
+                    entity_type == "ligand"
+                    and isinstance(ligand, str)
+                    and not ligand.startswith(("CCD_", "FILE_"))
+                )
 
                 entity_atom_array = None
                 ids = entity.get("id")
@@ -149,6 +156,8 @@ class SampleDictToFeatures:
                                 break
                             asym_chain_idx += 1
 
+                    if is_smiles:
+                        self.smiles_by_chain[asym_id_str] = ligand
                     asym_chain = copy.deepcopy(entity["atom_array"])
                     chain_id = [asym_id_str] * len(asym_chain)
                     copy_id = [asym_chain_count] * len(asym_chain)
@@ -171,6 +180,14 @@ class SampleDictToFeatures:
                 else:
                     entity_atom_array.hetero[:] = True
 
+                entity_atom_array.set_annotation(
+                    "conformer_restraints",
+                    np.full(
+                        len(entity_atom_array),
+                        bool(entity.get("conformer_restraints", False)),
+                        dtype=bool,
+                    ),
+                )
                 if atom_array is None:
                     atom_array = entity_atom_array
                 else:
@@ -384,4 +401,8 @@ class SampleDictToFeatures:
         feature_dict["frame_atom_index"] = torch.Tensor(
             token_array_with_frame.get_annotation("frame_atom_index")
         ).long()
+        if self.input_dict.get("restraints_config") is not None:
+            feature_dict["atom_array"] = atom_array
+            feature_dict["smiles_by_chain"] = self.smiles_by_chain
+            feature_dict["restraints_config"] = self.input_dict["restraints_config"]
         return feature_dict, atom_array, token_array

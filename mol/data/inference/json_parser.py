@@ -428,10 +428,16 @@ def rdkit_mol_to_atom_array(mol: Chem.Mol, removeHs: bool = True) -> AtomArray:
         atom_array.charge[i] = atom.GetFormalCharge()
         atom_array.coord[i, :] = coord[i, :]
 
-    bonds = []
-    for bond in mol.GetBonds():
-        bonds.append([bond.GetBeginAtomIdx(), bond.GetEndAtomIdx()])
-    atom_array.bonds = struc.BondList(atom_count, np.array(bonds))
+    # Preserve bond orders for RGI without changing model connectivity.
+    kmol = Chem.Mol(mol)
+    Chem.Kekulize(kmol, clearAromaticFlags=True)
+    bonds = [
+        [bond.GetBeginAtomIdx(), bond.GetEndAtomIdx(), int(bond.GetBondTypeAsDouble())]
+        for bond in kmol.GetBonds()
+    ]
+    atom_array.bonds = struc.BondList(
+        atom_count, np.asarray(bonds, dtype=int).reshape(-1, 3)
+    )
     if removeHs:
         atom_array = atom_array[atom_array.element != "H"]
     return atom_array

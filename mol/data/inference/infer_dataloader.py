@@ -87,6 +87,15 @@ class InferenceDataset(Dataset):
         self.use_template = configs.get("use_template", True)
         with open(self.input_json_path, "r") as f:
             self.inputs = json.load(f)
+        from pathlib import Path
+
+        from rgi_toolkit.config import resolve_restraints_config
+
+        for job in self.inputs:
+            if job.get("restraints_config") is not None:
+                job["restraints_config"] = resolve_restraints_config(
+                    job["restraints_config"], base_dir=Path(self.input_json_path).parent
+                )
         if self.use_template:
             template_mmcif_dir = configs.data.template.prot_template_mmcif_dir
             fetch_remote = configs.data.template.get("fetch_remote", True)
